@@ -1,0 +1,44 @@
+{
+  "name": "ice-php/mysql",
+  "description": "对Mysql访问进行封装",
+  "keywords": [
+    "icePHP",
+    "mysql"
+  ],
+  "homepage": "https://github.com/ice-php/mysql",
+  "type": "composer",
+  "license": "MIT",
+  "support": {
+    "source": "https://github.com/ice-php/mysql"
+  },
+  "authors": [
+    {
+      "name": "blueice",
+      "email": "liyong@nenu.edu.cn"
+    }
+  ],
+  "require": {
+    "php": ">=7.1.0",
+    "ice-php/config": "dev-master",
+    "ice-php/debug": "dev-master",
+    "ice-php/functions": "dev-master"
+  },
+  "minimum-stability": "dev",
+  "autoload": {
+    "files": [
+      "src/functions.php"
+    ],
+    "psr-4": {
+      "icePHP\\": "src"
+    }
+  },
+  "repositories": {
+    "packagist": {
+      "type": "composer",
+      "url": "https://packagist.org"
+    }
+  },
+  "config": {
+    "process-timeout": 1800
+  }
+}
