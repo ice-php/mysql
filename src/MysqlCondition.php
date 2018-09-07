@@ -203,11 +203,9 @@ class MysqlCondition
      */
     private function item($key, $value): ?array
     {
-        $key = trim($key);
-
         // 键不是整数,有用,需要分析
         if (!is_numeric($key)) {
-            return $this->itemWithKey($key, $value);
+            return $this->itemWithKey(trim($key), $value);
         }
 
         //键是整数,无用
