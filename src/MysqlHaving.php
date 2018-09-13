@@ -16,7 +16,7 @@ class MysqlHaving extends MysqlCondition
      * SMysqlWhere constructor.
      * @param mixed $condition
      * @param string $operator
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function __construct($condition, $operator = 'AND')
     {

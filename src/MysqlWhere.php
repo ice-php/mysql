@@ -15,7 +15,7 @@ class MysqlWhere extends MysqlCondition
      * 构造方法
      * @param mixed $condition
      * @param string $operator
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function __construct($condition, $operator = 'AND')
     {

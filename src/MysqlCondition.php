@@ -38,7 +38,7 @@ class MysqlCondition
      * SMysqlCondition constructor.
      * @param $condition mixed 各种允许的条件输入, 数组|字符串|数值|空
      * @param $operator string 本层运算符
-     * @throws \Exception
+     * @throws MysqlException
      */
     protected function __construct($condition, string $operator = 'AND')
     {
@@ -76,7 +76,7 @@ class MysqlCondition
         }
 
         // 条件必须是空或字符串或数值或数组
-        throw new \Exception('Condition must bu string or numeric or array:' . $condition);
+        throw new MysqlException('指定条件时必须是字符串或数组:' . json($condition), MysqlException::CONDITION_TYPE_ERROR);
     }
 
     /**
@@ -95,7 +95,7 @@ class MysqlCondition
      * 条件数组中的元素,没有指定键的情况下
      * @param $value mixed 值
      * @return array [SQL,Prepare,Param]
-     * @throws \Exception
+     * @throws MysqlException
      */
     private function itemWithoutKey($value): array
     {
@@ -109,7 +109,7 @@ class MysqlCondition
 
         // 必须是字符串了!!!
         if (!is_string($value)) {
-            throw new \Exception('Condition value must be string:' . $this->origin . ' ' . $value);
+            throw new MysqlException('CONDITION_VALUE_TYPE:' . json($this->origin) . ':' . json($value), MysqlException::CONDITION_VALUE_TYPE);
         }
 
         return [$value, $value, []];
@@ -120,13 +120,13 @@ class MysqlCondition
      * @param $key string|int 键
      * @param $value mixed  值
      * @return array [SQL,Prepare,Param]
-     * @throws \Exception
+     * @throws MysqlException
      */
     private function itemWithKey($key, $value): array
     {
         // 条件中的值,必须是数值或字符串
         if (!is_numeric($value) and !is_string($value) and !is_array($value)) {
-            throw new \Exception('Condition value must be string or numeric:' . var_dump($this->origin) . ':' . $value);
+            throw new MysqlException('条件值必须是字符串或数字:' . json($this->origin) . ':' . json($value), MysqlException::CONDITION_VALUE_TYPE);
         }
 
         // 转义字符串的值
@@ -199,7 +199,7 @@ class MysqlCondition
      * @param $key string|int 键
      * @param $value mixed 值
      * @return array|null
-     * @throws \Exception
+     * @throws MysqlException
      */
     private function item($key, $value): ?array
     {
@@ -215,7 +215,7 @@ class MysqlCondition
     /**
      * 如果输入是数组,则要分别处理
      * @param array $condition
-     * @throws \Exception
+     * @throws MysqlException
      */
     private function isArray(array $condition)
     {
@@ -303,7 +303,7 @@ class MysqlCondition
     /**
      * 识别Between条件的数据
      * @param array|string $value
-     * @throws \Exception
+     * @throws MysqlException
      * @return array
      */
     private function markBetween($value): array
@@ -315,7 +315,7 @@ class MysqlCondition
 
         // 除了数组,只能是字符串
         if (!is_string($value)) {
-            throw new \Exception('Value of Between must be string or array:' . dump($value, '', true));
+            throw new MysqlException('between操作的值必须是字符串或数组:' . json($value), MysqlException::BETWEEN_TYPE_ERROR);
         }
 
         // 尝试按逗号分解
@@ -333,7 +333,7 @@ class MysqlCondition
         // 尝试按 AND 分解
         $matched = preg_match('/(.+)\sAND\s(.+)/is', $value, $arr);
         if (!$matched) {
-            throw new \Exception('Unregonized value in operation between:' . $value);
+            throw new MysqlException('between操作的值无法识别:' . $value, MysqlException::BETWEEN_VALUE_ERROR);
         }
 
         // 整理识别结果
@@ -403,7 +403,7 @@ class MysqlCondition
     /**
      * 识别In条件的参数数组
      * @param string|array $value
-     * @throws \Exception
+     * @throws MysqlException
      * @return array
      */
     private function markIn($value): array
@@ -415,7 +415,7 @@ class MysqlCondition
 
         // 除了数组,只能是字符串
         if (!is_string($value)) {
-            throw new \Exception('Value of IN must be string or array:' . dump($value, '', true));
+            throw new MysqlException('in运算符的值必须是字符串或数组:' . json($value), MysqlException::IN_VALUE_ERROR);
         }
 
         // 尝试按逗号分解

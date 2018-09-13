@@ -39,7 +39,7 @@ final class Mysql
      * @param string $alias 表的别名,即配置文件中的键名
      * @param string $mode write/read 为了读还是为了写,这将导致连接不同的数据库
      * @return \PDO
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function connect(string $alias, string $mode = 'write'): \PDO
     {
@@ -66,7 +66,7 @@ final class Mysql
     /**
      * 获取数据库配置信息
      * @return array ['_default'=>['read'=>[<连接信息>],'write'=>[<连接信息>]],'表别名'=>['read'=>...,'write'=>...,'table'=><原始表名>],...]
-     * @throws \Exception
+     * @throws MysqlException
      */
     private function getConfig(): array
     {
@@ -77,7 +77,7 @@ final class Mysql
         // 读取整个数据连接的原始配置
         $origin = config('database');
         if (!$origin) {
-            throw new \Exception("can't read config of database");
+            throw new MysqlException("缺失数据库连接配置", MysqlException::MISS_CONFIG);
         }
 
         //默认的读和写连接
@@ -144,6 +144,7 @@ final class Mysql
      * 连接指定数据库
      * @param array $connectInfo
      * @return \PDO
+     * @throws MysqlException
      */
     public static function connectDatabase(array $connectInfo): \PDO
     {
@@ -219,8 +220,8 @@ final class Mysql
                 // 超时,30秒
                 \PDO::ATTR_TIMEOUT => config('system', 'database_timeout')
             ]);
-        } catch (\Exception $e) {
-            die("Can't connect to Database:$database@$host:$port");
+        } catch (\PDOException $e) {
+            throw new MysqlException("连接数据库失败:$database@$host:$port", MysqlException::CONNECT_FAIL);
         }
 
         // 设置一些必要的连接属性
@@ -245,7 +246,7 @@ final class Mysql
      * 对某个表进行锁定(默认写锁)
      * @param string $tableName 表别名
      * @param string $level 锁级别,read/write
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function lock(string $tableName, string $level): void
     {
@@ -262,7 +263,7 @@ final class Mysql
     /**
      * 解除表锁定
      * @param string $tableName 表别名
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function unlock(string $tableName): void
     {
@@ -324,7 +325,7 @@ final class Mysql
      * 对字段列表进行标准化
      * @param $fields mixed 字段列表
      * @return array 字段=>别名 数组
-     * @throws \Exception
+     * @throws MysqlException
      */
     private function formatFields($fields): array
     {
@@ -335,7 +336,7 @@ final class Mysql
 
         // 列名信息必须是字符串或对象或数组或0或空
         if (!is_array($fields)) {
-            throw new \Exception('fieldList must be string or array  :' . $fields);
+            throw new MysqlException('字段列表必须是字符串或数组:' . json($fields), MysqlException::FIELD_LIST_FORMAT_ERROR);
         }
 
         $ret = [];
@@ -344,7 +345,7 @@ final class Mysql
         foreach ($fields as $key => $value) {
             // 列名必须是字符串
             if (!is_string($value) or is_numeric($value)) {
-                throw new \Exception('Field name must be string:' . $value);
+                throw new MysqlException('字段名必须是字符串:' . json($value), MysqlException::FIELD_NAME_MUST_STRING);
             }
 
             // 如果是整数,表明,未指定键名,只有键 值
@@ -360,7 +361,7 @@ final class Mysql
 
             // 非整数的数值,这不科学
             if (is_numeric($key)) {
-                throw new \Exception('Field alias must be string:' . $key);
+                throw new MysqlException('字段别名必须是字符串:' . json($key), MysqlException::FIELD_ALIAS_MUST_STRING);
             }
 
             // 键是字段名
@@ -385,7 +386,7 @@ final class Mysql
      *
      *            =><别名>
      * @return string
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function createFields($fields = null): string
     {
@@ -406,7 +407,7 @@ final class Mysql
      * @param $joins array 开发人员设置的join信息
      * @param $ons array 开发人员设置的 on 信息
      * @return string 拼接后的SQL
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function createJoins(array $operations, array $joins, array $ons): string
     {
@@ -422,7 +423,7 @@ final class Mysql
      * @param $operation string JOIN的方向
      * @param $join mixed 原始JOIN,可能是字符串或一个键值对
      * @return string SQL语句
-     * @throws \Exception
+     * @throws MysqlException
      */
     private function createJoin(string $operation, $join): string
     {
@@ -436,7 +437,7 @@ final class Mysql
         } elseif ($operation == 'outer') {
             $operation = 'OUTER JOIN';
         } else {
-            throw new \Exception('Join Operation unknown:' . $operation);
+            throw new MysqlException('连接操作符无法识别:' . $operation, MysqlException::JOIN_UNKNOWN);
         }
 
         //字符串
@@ -450,7 +451,7 @@ final class Mysql
             //分解原名与别名
             $parts = explode($matches[1], $join);
             if (count($parts) != 2) {
-                throw new \Exception('Join table name unknown.');
+                throw new MysqlException('要连接的表名无法识别:' . $join, MysqlException::JOIN_TABLE_UNKNOWN);
             }
 
             //返回带别名的JOIN语句
@@ -459,12 +460,12 @@ final class Mysql
 
         //必须是字符串或数组
         if (!is_array($join)) {
-            throw new \Exception('Join table must be string or array');
+            throw new MysqlException('要连接的表必须使用字符串或数组表示:' . json($join), MysqlException::JOIN_TABLE_TYPE_ERROR);
         }
 
         //数组必须只有一个键值对
         if (count($join) > 1) {
-            throw new \Exception('can\'t join more table at once.');
+            throw new MysqlException('一次只能连接一个表:' . json($join), MysqlException::JOIN_ONCE);
         }
 
         $k = array_keys($join)[0];
@@ -483,7 +484,7 @@ final class Mysql
      * 构造一条ON语句
      * @param $on mixed
      * @return string
-     * @throws \Exception
+     * @throws MysqlException
      */
     private function createOn($on): string
     {
@@ -499,7 +500,7 @@ final class Mysql
      *            ***    array('本表字段'=>'关联表字段')
      *            ***    array('本表字段','关联表字段')
      * @return array(<本表字段>,<关联表字段>)
-     * @throws \Exception
+     * @throws MysqlException
      */
     private function createRelation($relation): array
     {
@@ -515,7 +516,7 @@ final class Mysql
 
         // 字符串形式
         if (!is_string($relation)) {
-            throw new \Exception('Relation for link error:' . $relation);
+            throw new MysqlException('关联关系错误:' . json($relation), MysqlException::RELATION_ERROR);
         }
 
         // 分解关联键
@@ -534,7 +535,7 @@ final class Mysql
      * 生成WHERE子句
      * @param mixed $where 参考createCondition
      * @return array
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function createWhere($where = false): array
     {
@@ -546,7 +547,7 @@ final class Mysql
      * 生成HAVING子句
      * @param mixed $having 参考createCondition
      * @return array
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function createHaving($having): array
     {
@@ -557,7 +558,7 @@ final class Mysql
      * 生成 GROUP BY 子句
      * @param mixed $groupBy 参考createSort
      * @return string
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function createGroupBy($groupBy): string
     {
@@ -568,7 +569,7 @@ final class Mysql
      * 生成 ORDER BY 子句
      * @param mixed $orderBy 参考createSort
      * @return string
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function createOrderBy($orderBy = null): string
     {
@@ -584,7 +585,7 @@ final class Mysql
      *            [<开始>,<行数>]
      *            [<行数>]
      * @return int|array(偏移,行数)
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function createLimit($limit = null)
     {
@@ -627,7 +628,7 @@ final class Mysql
 
         // 分页参数 必须是空或0或字符串或数组
         if (!is_array($limit)) {
-            throw new \Exception('Limit syntax wrong,must be string or array:' . $limit);
+            throw new MysqlException('分页参数必须是字符串或数组:' . json($limit), MysqlException::LIMIT_ERROR);
         }
 
         return [intval($limit[0]), intval($limit[1])];
@@ -652,7 +653,7 @@ final class Mysql
      * 检查表名是否合法,并规范化
      * @param $tableName string
      * @return string 表名
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function createTableName(string $tableName): string
     {
@@ -661,17 +662,17 @@ final class Mysql
 
         // 不能为空
         if (!$tableName) {
-            throw new \Exception('Table name must not be null.');
+            throw new MysqlException('表名不能为空', MysqlException::TABLE_NAME_NULL);
         }
 
         // 正则检查
         if (preg_match('/[\/\\\$\@\'"\[\]\(\)]/i', $tableName)) {
-            throw new \Exception('Table name invalid:' . $tableName);
+            throw new MysqlException('表名格式错误:' . $tableName, MysqlException::TABLE_NAME_FORMAT);
         }
 
         // 其实,不用查这个
         if (strpos($tableName, ',')) {
-            throw new \Exception('Table name invalid:' . $tableName);
+            throw new MysqlException('表名中不能有特殊符号:' . $tableName, MysqlException::TABLE_NAME_INVALID);
         }
 
         // 返回纯净的表名
@@ -682,7 +683,7 @@ final class Mysql
      * 获取查询语句中的涉及表名
      * @param string $sql
      * @return array 表名列表
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function getNameFromQuery(string $sql): array
     {
@@ -690,7 +691,7 @@ final class Mysql
 
         // 获取命令字
         if (!preg_match('/^\s*(\w+)\b/i', $sql, $matches)) {
-            throw new \Exception("SQL query statement invalid:" . $sql);
+            throw new MysqlException('SQL语句格式错误:' . $sql, MysqlException::SQL_FORMAT);
         }
 
         // 取出语句的动词
@@ -698,7 +699,7 @@ final class Mysql
 
         // 查询语句必须是指定开头,否则不承认
         if (!in_array($op, ['select', 'show', 'desc', 'repair', 'optimize', 'call'])) {
-            throw new \Exception("Can't use '" . $matches[0] . "' in query statement.");
+            throw new MysqlException('查询命令无法识别或不支持:' . $matches[0], MysqlException::QUERY_COMMAND);
         }
 
         // 匹配 表名部分 ,包括 From之后和Join之后
@@ -722,7 +723,7 @@ final class Mysql
      * 获取执行语句中的涉及表名
      * @param string $sql 语句
      * @return array 表名列表
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function getNameFromExecute(string $sql): array
     {
@@ -730,19 +731,18 @@ final class Mysql
 
         // 获取命令字
         if (!preg_match('/^(\w+)\b/i', $sql, $matches)) {
-            throw new \Exception("SQL query statement invalid:" . $sql);
+            throw new MysqlException('SQL语句格式错误:' . $sql, MysqlException::SQL_FORMAT);
         }
 
         // 只支持Insert,Update,Delete,Replace语句,其它不支持
         $command = strtolower($matches[0]);
         if (!in_array($command, ['insert', 'update', 'delete', 'replace'])) {
-            return [];
+            throw new MysqlException('操纵命令无法识别或不支持:' . $command, MysqlException::EXECUTE_COMMAND);
         }
 
-        // 匹配表名部分,包括 insert [into] $tbl , replace [into] $tbl, update $tbl,
-        // delete from $tbl
+        // 匹配表名部分,包括 insert [into] $tbl , replace [into] $tbl, update $tbl, delete from $tbl
         if (!preg_match_all('/insert\s+(into\s+)?([\w|`]+)|replace\s+(into\s+)?([\w|`]+)|delete\s+from\s+([\w|`]+)|update\s+([\w|`]+)/i', $sql, $matches)) {
-            return [];
+            throw new MysqlException('无法识别操纵命令中的表名:' . $sql, MysqlException::EXECUTE_TABLE_NAME);
         }
 
         // 收集匹配的表名
