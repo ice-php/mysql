@@ -85,4 +85,19 @@ class MysqlException extends \Exception
 
     //排序方向只能使用ASC或DESC
     const ORDER_DIRECTION_ERROR=27;
+
+    //更新时必须指定数据
+    const MISS_DATA_IN_MODIFY=28;
+
+    //更新时数据类型错误
+    const DATA_TYPE_ERROR_IN_MODIFY=29;
+
+    //更新时字段名必须是字符串
+    const FIELD_NAME_IN_MODIFY=30;
+
+    //更新时字段的值必须是字符串或数值
+    const VALUE_IN_MODIFY=31;
+
+    //更新时没有有效的数据
+    const INVALID_MODIFY=32;
 }

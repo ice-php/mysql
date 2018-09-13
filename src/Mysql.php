@@ -925,7 +925,7 @@ final class Mysql
      * 构造获取索引信息的语句
      * @param string $tableName 表名
      * @return string 查询语句
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function createIndex(string $tableName): string
     {
@@ -1011,25 +1011,25 @@ final class Mysql
      *
      * @param array $row 行数据
      * @return array [字段名列表,值列表]
-     * @throws \Exception
+     * @throws MysqlException
      */
     public function createRow(array $row): array
     {
         // 更新时必须指定要更新的数据
         if (!$row) {
-            throw new \Exception('modify data is null');
+            throw new MysqlException('更新时必须指定数据',MysqlException::MISS_DATA_IN_MODIFY);
         }
 
         // 要更新的数据必须以对象或数组的方式提供
         if (!is_array($row)) {
-            throw new \Exception('modify data must be array or object:' . dump($row, 'row', true));
+            throw new MysqlException('更新时数据类型错误:'.json($row),MysqlException::DATA_TYPE_ERROR_IN_MODIFY);
         }
 
         $fields = $values = [];
         foreach ($row as $name => $value) {
             // 更新的数据中,列名必须是字符串
             if (!is_string($name) or is_numeric($name)) {
-                throw new \Exception('modify field name must be string:' . dump($name, 'name', true));
+                throw new MysqlException('更新时字段名必须是字符串:'.json($name),MysqlException::FIELD_NAME_IN_MODIFY);
             }
 
             // 如果值为空,则存储空字符串
@@ -1039,7 +1039,7 @@ final class Mysql
 
             // 值只能是字符串或数值
             if (!is_string($value) and !is_numeric($value)) {
-                throw new \Exception('modify field value must be string or numeric:' . dump($value, 'value', true));
+                throw new MysqlException('更新时字段的值必须是字符串或数值:'.json($value),MysqlException::VALUE_IN_MODIFY);
             }
 
             // 名加上定界符,值不加(可能是表达式)
@@ -1049,7 +1049,7 @@ final class Mysql
 
         // 没有有效的更新数据
         if (!count($fields)) {
-            throw new \Exception('modify data invalid:' . dump($row, 'row', true));
+            throw new MysqlException('更新时没有有效的数据:'.json($row),MysqlException::INVALID_MODIFY);
         }
 
         return [$fields, $values];
