@@ -107,7 +107,7 @@ final class Mysql
             }
 
             //非默认连接,必须指定这个连接里有哪些表
-            if (isset($config['tables']) and is_array($config['tables'])) :
+            if (isset($connect['tables']) and is_array($connect['tables'])) :
                 foreach ($connect['tables'] as $alias => $table) :
                     //如果未指定别名,则别名 与表名相同
                     if (is_numeric($alias)) {
