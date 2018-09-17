@@ -29,7 +29,6 @@ abstract class MysqlSort
     /**
      * SMysqlSort constructor.
      * @param $sort string|array|null 原始输入
-     * @throws MysqlException
      */
     public function __construct($sort)
     {
@@ -40,7 +39,6 @@ abstract class MysqlSort
 
     /**
      * 具体处理排序情况
-     * @throws MysqlException
      */
     private function process(): void
     {
@@ -63,7 +61,7 @@ abstract class MysqlSort
 
         // orderby或groupby中的排序依据 必须是空或0或字符串或数组或对象
         if (!is_array($sort)) {
-            throw new MysqlException('指定排序时必须是字符串或数组:' . json($sort), MysqlException::ORDER_TYPE_ERROR);
+            trigger_error('指定排序时必须是字符串或数组:' . json($sort),E_USER_ERROR);
         }
 
         // 第二项是ASC/DESC
@@ -75,7 +73,7 @@ abstract class MysqlSort
         $ret = [];
         foreach ($sort as $key => $value) {
             if (!is_string($value)) {
-                throw new MysqlException('排序字段必须是字符串:' . json($value) . ':' . json($this->origin), MysqlException::ORDER_FIELD_STRING);
+                trigger_error('排序字段必须是字符串:' . json($value) . ':' . json($this->origin),E_USER_ERROR);
             }
             $ret[] = $this->item($key, $value);
         }
@@ -89,7 +87,6 @@ abstract class MysqlSort
      * @param $key int|string 键
      * @param $value string 值
      * @return string
-     * @throws MysqlException
      */
     private function item($key, string $value): string
     {
@@ -113,7 +110,7 @@ abstract class MysqlSort
 
         // 排序中的方向不被允许
         if ($dim != 'ASC' and $dim != 'DESC') {
-            throw new MysqlException('排序方向只能使用ASC或DESC:'.$dim,MysqlException::ORDER_DIRECTION_ERROR);
+            trigger_error('排序方向只能使用ASC或DESC:'.$dim,E_USER_ERROR);
         }
 
         // 构造SQL中排序语法: 空格分隔
@@ -128,7 +125,6 @@ abstract class MysqlSort
      * 分解一个没有键的数组元素
      * @param $value string 字符串
      * @return array [sortBy,direction]
-     * @throws MysqlException
      */
     private function itemWithoutKey(string $value): array
     {
@@ -137,7 +133,7 @@ abstract class MysqlSort
 
         // 每一项排序依据最多是二项,(列名+升降)
         if (count($arr) > 2) {
-            throw new MysqlException('指定排序的语法错误:' . json($arr), MysqlException::ORDER_SYNTAX_ERROR);
+            trigger_error('指定排序的语法错误:' . json($arr), E_USER_ERROR);
         }
 
         // 只指明了一个值,默认升序
