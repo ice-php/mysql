@@ -215,6 +215,9 @@ final class Mysql
                 // 数值不要自动 转换成字符串
                 \PDO::ATTR_STRINGIFY_FETCHES => false,
 
+                // 不要在本地模拟Prepare
+                \PDO::ATTR_EMULATE_PREPARES=>false,
+
                 // 自动提交,必须自动提交,否则 就需要显式Commit,否则 必然会丢失数据
                 \PDO::ATTR_AUTOCOMMIT => true,
 
