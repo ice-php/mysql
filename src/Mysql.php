@@ -216,7 +216,7 @@ final class Mysql
                 \PDO::ATTR_STRINGIFY_FETCHES => false,
 
                 // 不要在本地模拟Prepare
-                \PDO::ATTR_EMULATE_PREPARES=>false,
+                \PDO::ATTR_EMULATE_PREPARES => false,
 
                 // 自动提交,必须自动提交,否则 就需要显式Commit,否则 必然会丢失数据
                 \PDO::ATTR_AUTOCOMMIT => true,
@@ -224,8 +224,8 @@ final class Mysql
                 // 超时,30秒
                 \PDO::ATTR_TIMEOUT => $timeout
             ]);
-        }catch (\PDOException $e){
-            trigger_error('数据库连接失败:'.$database.'@'.$host.':'.$port,E_USER_ERROR);
+        } catch (\PDOException $e) {
+            trigger_error('数据库连接失败:' . $database . '@' . $host . ':' . $port, E_USER_ERROR);
         }
 
         // 设置一些必要的连接属性
@@ -235,7 +235,7 @@ final class Mysql
         $connect->exec("SET NAMES 'utf8mb4'");
 
         // 写调试信息
-        Debug::setSql("Connect", '', timeLog($start), '', "$database at $host:$port");
+        Debug::setSql("Connect", '', timeLog($start) * 1000, '', "$database at $host:$port");
 
         // 记录此句柄的最后使用时间
         $lastTime[$key] = time();
@@ -362,7 +362,7 @@ final class Mysql
 
             // 非整数的数值,这不科学
             if (is_numeric($key)) {
-                trigger_error('字段别名必须是字符串:' . json($key),E_USER_ERROR);
+                trigger_error('字段别名必须是字符串:' . json($key), E_USER_ERROR);
             }
 
             // 键是字段名
@@ -435,7 +435,7 @@ final class Mysql
         } elseif ($operation == 'outer') {
             $operation = 'OUTER JOIN';
         } else {
-            trigger_error('连接操作符无法识别:' . $operation,E_USER_ERROR);
+            trigger_error('连接操作符无法识别:' . $operation, E_USER_ERROR);
         }
 
         //字符串
@@ -458,7 +458,7 @@ final class Mysql
 
         //必须是字符串或数组
         if (!is_array($join)) {
-           trigger_error('要连接的表必须使用字符串或数组表示:' . json($join),E_USER_ERROR);
+            trigger_error('要连接的表必须使用字符串或数组表示:' . json($join), E_USER_ERROR);
         }
 
         //数组必须只有一个键值对
@@ -512,7 +512,7 @@ final class Mysql
 
         // 字符串形式
         if (!is_string($relation)) {
-            trigger_error('关联关系错误:' . json($relation),E_USER_ERROR);
+            trigger_error('关联关系错误:' . json($relation), E_USER_ERROR);
         }
 
         // 分解关联键
@@ -662,7 +662,7 @@ final class Mysql
 
         // 其实,不用查这个
         if (strpos($tableName, ',')) {
-            trigger_error('表名中不能有特殊符号:' . $tableName,E_USER_ERROR);
+            trigger_error('表名中不能有特殊符号:' . $tableName, E_USER_ERROR);
         }
 
         // 返回纯净的表名
@@ -730,7 +730,7 @@ final class Mysql
 
         // 匹配表名部分,包括 insert [into] $tbl , replace [into] $tbl, update $tbl, delete from $tbl
         if (!preg_match_all('/insert\s+(into\s+)?([\w|`]+)|replace\s+(into\s+)?([\w|`]+)|delete\s+from\s+([\w|`]+)|update\s+([\w|`]+)/i', $sql, $matches)) {
-            trigger_error('无法识别执行命令中的表名:' . $sql,E_USER_ERROR);
+            trigger_error('无法识别执行命令中的表名:' . $sql, E_USER_ERROR);
         }
 
         // 收集匹配的表名
