@@ -141,6 +141,9 @@ final class Mysql
         return $config = $tables;
     }
 
+    //执行本代码的进程编号(由posix_getpid得到),用于判断是否切换了进程
+    private static $processId = 0;
+
     /**
      * 连接指定数据库
      * @param array $connectInfo
@@ -153,6 +156,13 @@ final class Mysql
 
         // 连接句柄的最后使用时间(用来控制过期)
         static $lastTime = [];
+
+        //如果切换了进程,则清除全部连接缓存
+        if (!isWindows() and self::$processId != posix_getpid()) {
+            $connects = [];
+            $lastTime = [];
+            self::$processId = posix_getpid();
+        }
 
         // 数据库服务器的IP或域名
         $host = $connectInfo['host'];
@@ -183,24 +193,23 @@ final class Mysql
         // 取连接句柄的过期时间(秒)
         $timeout = configDefault(10, 'system', 'database_timeout');
 
-        // 如果 过期,则删除,否则 会出错误
-        if (isset($lastTime[$key]) and time() - $lastTime[$key] > $timeout) {
-            unset($lastTime[$key]);
-            unset($connects[$key]);
-        }
-
-        // 如果此连接已经存在,直接返回句柄
-        if (isset($connects[$key])) {
-            // 记录此句柄的最后使用时间
-            $lastTime[$key] = time();
-            return $connects[$key];
-        }
+//        // 如果 过期,则删除,否则 会出错误
+//        if (isset($lastTime[$key]) and time() - $lastTime[$key] > $timeout) {
+//            unset($lastTime[$key]);
+//            unset($connects[$key]);
+//        }
+//
+//        // 如果此连接已经存在,直接返回句柄
+//        if (isset($connects[$key])) {
+//            // 记录此句柄的最后使用时间
+//            $lastTime[$key] = time();
+//            return $connects[$key];
+//        }
 
         // 记录开始时间
         $start = timeLog();
 
         try {
-
             // 连接指定数据库
             $connect = new \PDO("mysql:host=$host;dbname=$database;port=$port", $user, $pass, [
                 // 使用缓存
