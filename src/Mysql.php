@@ -158,7 +158,7 @@ final class Mysql
         static $lastTime = [];
 
         //如果切换了进程,则清除全部连接缓存
-        if (!isWindows() and self::$processId != posix_getpid()) {
+        if (!isWindows() and function_exists('posix_getpid') and self::$processId != posix_getpid()) {
             $connects = [];
             $lastTime = [];
             self::$processId = posix_getpid();
